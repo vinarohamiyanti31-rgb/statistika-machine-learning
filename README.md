@@ -72,6 +72,7 @@ Variabel **Channel** dan **Region** tidak digunakan dalam proses clustering kare
 ## Penulis
 
 **Vina Rohamiyanti**
+
 NIM : 3338240007
 
 Program Studi Statistika
