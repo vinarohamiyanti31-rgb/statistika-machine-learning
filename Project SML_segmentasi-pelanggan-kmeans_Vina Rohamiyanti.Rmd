@@ -1,0 +1,315 @@
+---
+title: "Segmentasi Pelanggan dengan K-Means Clustering pada Dataset Wholesale Customers"
+author: "Vina Rohamiyanti (3338240007)"
+date: "2026-06-05"
+
+output:
+  rmdformats::material
+---
+
+# Pendahuluan
+
+Laporan ini disusun untuk memenuhi tugas mata kuliah *Statistical Machine Learning (SML)*. Pada tugas ini digunakan salah satu dataset dari UCI Machine Learning Repository untuk penerapan metode clustering dengan output berupa HTML atau PDF.
+
+Dataset yang digunakan adalah *Wholesale Customers Dataset* yang diperoleh dari UCI Machine Learning Repository. Analisis dilakukan menggunakan metode K-Means Clustering dengan tahapan preprocessing berupa scaling data. Penentuan jumlah cluster optimal dilakukan menggunakan Elbow Method, kemudian hasilnya dievaluasi menggunakan Silhouette Analysis.
+
+# Deskripsi Dataset
+## Sumber Dataset
+Dataset yang digunakan pada project ini adalah Wholesale Customers Dataset yang bersumber dari UCI Machine Learning Repository. Dataset tersebut dapat diakses secara publik melalui tautan berikut:
+
+https://archive.ics.uci.edu/dataset/292/wholesale+customers
+
+Dataset ini berisi data pengeluaran tahunan pelanggan distributor grosir pada beberapa kategori produk, sehingga sesuai untuk diterapkan metode clustering dalam mengelompokkan pelanggan berdasarkan pola pembeliannya.
+
+## Deskripsi Umum Dataset
+
+| Atribut | Keterangan |
+|:---------|:------------|
+| Nama Dataset | Wholesale Customers Dataset |
+| Sumber | UCI Machine Learning Repository |
+| Jumlah Observasi | 440 baris |
+| Jumlah Variabel | 8 kolom |
+
+## Deskripsi Variabel
+### Variabel Kategorik
+
+- Channel
+- Region
+
+> Variabel ini tidak digunakan dalam proses clustering karena metode K-Means hanya bekerja pada data numerik.
+
+### Variabel Numerik
+
+- Fresh
+- Milk
+- Grocery
+- Frozen
+- Detergents_Paper
+- Delicassen
+
+> Variabel-variabel tersebut menunjukkan pengeluaran tahunan pelanggan pada masing-masing kategori produk.
+
+# Preprocessing Data
+## Loading Library
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+library(factoextra)
+library(cluster)
+library(fpc)
+library(ggplot2)
+library(tidyr)
+```
+
+## Import Data & Cleaning
+```{r}
+# Import dataset Wholesale Customers dari file lokal
+data <- read_excel("D:/downloads/tugas sml per 13 (projeck)/Wholesale Customers Dataset.xlsx")
+
+# Menampilkan data awal
+head(data)
+
+# Struktur data
+str(data)
+
+# Mengecek missing value
+colSums(is.na(data))
+```
+> Hasil pengecekan menunjukkan bahwa dataset terdiri dari 440 observasi dan tidak ditemukan nilai hilang (missing value), sehingga data dapat langsung digunakan untuk proses clustering.
+
+## Seleksi Variabel
+```{r}
+# Mengambil variabel numerik untuk clustering
+# Kolom 3–8 berisi variabel belanja pelanggan
+
+data_cluster <- data[, 3:8]
+head(data_cluster)
+```
+> Variabel yang digunakan hanya variabel numerik yang menggambarkan pengeluaran pelanggan pada berbagai kategori produk.
+
+## Scaling Data (Standardisasi)
+```{r}
+# Standardisasi data menggunakan Z-Score
+data_scaled <- scale(data_cluster)
+
+# Menampilkan beberapa data hasil scaling
+head(data_scaled)
+
+# Ringkasan statistik hasil scaling
+summary(data_scaled)
+```
+
+> Scaling dilakukan menggunakan metode Z-Score Standardization agar seluruh variabel memiliki skala yang sama. Tahap ini penting karena rentang nilai antar variabel sangat berbeda sehingga dapat memengaruhi hasil pengelompokan K-Means.
+
+# Penentuan Cluster Optimal & K-Means
+## Analisis Jumlah Cluster Optimal
+```{r}
+# Elbow Method (WSS)
+plot_elbow <- fviz_nbclust(x = data_scaled, FUNcluster = kmeans, method = "wss")
+plot_elbow
+
+# Silhouette Method
+plot_silhouette <- fviz_nbclust(x = data_scaled, FUNcluster = kmeans, method = "silhouette")
+plot_silhouette
+```
+
+**Interpretasi Grafik Penentuan Cluster**
+
+Penentuan jumlah cluster optimal dilakukan menggunakan Elbow Method dan Silhouette Method. Berdasarkan grafik Elbow, nilai Within Cluster Sum of Squares (WSS) mengalami penurunan cukup tajam pada awal penambahan cluster, kemudian mulai melandai pada jumlah cluster yang lebih besar. Hal ini menunjukkan bahwa penambahan cluster setelah titik tertentu tidak memberikan peningkatan yang signifikan.
+
+Sementara itu, pada grafik Silhouette, nilai rata-rata silhouette width tertinggi diperoleh pada k = 2, yang menunjukkan bahwa pembentukan dua cluster memberikan pemisahan yang paling baik antar kelompok data.
+
+Berdasarkan kedua metode tersebut, jumlah cluster yang digunakan dalam penelitian ini adalah 2 cluster.
+
+## K-Means Clustering
+```{r}
+# Menjalankan algoritma K-Means dengan jumlah cluster optimal (k = 2)
+set.seed(123)
+km <- kmeans(x = data_scaled, centers = 2, nstart = 25)
+
+# Menampilkan hasil clustering
+km
+
+# Menampilkan jumlah anggota pada setiap cluster
+table(km$cluster)
+```
+**Interpretasi Hasil K-Means Clustering** 
+
+Berdasarkan hasil K-Means Clustering dengan k = 2, sebanyak 440 pelanggan berhasil dikelompokkan ke dalam dua cluster.
+
+Hasil pengelompokan menunjukkan bahwa:
+
+- Cluster 1 terdiri dari 41 pelanggan.
+- Cluster 2 terdiri dari 399 pelanggan.
+
+Terlihat bahwa sebagian besar pelanggan berada pada Cluster 2, sedangkan Cluster 1 hanya mencakup sebagian kecil data.
+
+Berdasarkan nilai rata-rata tiap variabel (cluster means), Cluster 1 memiliki tingkat pengeluaran yang relatif lebih tinggi, terutama pada kategori Milk, Grocery, dan Detergents_Paper. Hal ini menunjukkan bahwa pelanggan pada cluster ini cenderung memiliki aktivitas pembelian yang lebih besar.
+
+Sebaliknya, Cluster 2 memiliki nilai rata-rata yang lebih rendah pada hampir semua kategori. Dengan jumlah anggota yang jauh lebih banyak, cluster ini menggambarkan kelompok pelanggan umum dengan pola pembelian yang lebih rendah dan relatif seragam.
+
+Nilai between_SS / total_SS sebesar 26% menunjukkan bahwa model mampu menjelaskan sekitar 26% variasi data berdasarkan pemisahan antar cluster.
+
+Secara keseluruhan, K-Means Clustering berhasil membentuk dua segmen pelanggan yang cukup jelas, yaitu pelanggan dengan pengeluaran tinggi dan pelanggan dengan pengeluaran lebih rendah.
+
+# Evaluasi Model & Analisis Hierarki
+## Visualisasi Cluster
+```{r}
+# Grafik Cluster Plot Convex Hull
+fviz_cluster(km, data = data_scaled, geom = "point", 
+             ellipse.type = "convex", show.clust.cent = TRUE, repel = TRUE)
+```
+
+**Interpretasi Visualisasi Cluster Plot**
+
+Berdasarkan Cluster Plot, data pelanggan terbagi menjadi dua cluster yang cukup jelas. Visualisasi ini menggunakan dua dimensi utama, yaitu Dim1 (44,1%) dan Dim2 (28,4%), yang jika digabungkan menjelaskan sekitar 72,5% variasi data, sehingga sudah cukup mewakili struktur data asli.
+
+- Cluster 1 (merah) berisi 41 pelanggan dan berada di sisi kiri grafik. Sebarannya lebih menyebar, menunjukkan karakter pelanggan di kelompok ini lebih beragam, dengan kecenderungan tingkat pembelian yang lebih tinggi.
+- Cluster 2 (biru) berisi 399 pelanggan dan terkonsentrasi di sisi kanan grafik. Titiknya lebih rapat, menandakan pola pelanggan yang lebih seragam dan menjadi kelompok dominan, dengan pengeluaran cenderung lebih rendah.
+- Pemisah antar cluster terlihat cukup jelas terutama pada Dim1, yang menjadi sumbu utama pemisahan. Namun masih ada sedikit overlap di area tengah, yang menunjukkan ada beberapa pelanggan yang karakteristiknya mirip di kedua kelompok.
+
+Secara keseluruhan, K-Means sudah cukup baik dalam memisahkan pelanggan berdasarkan pola pengeluarannya.
+
+
+## Silhouette Evaluation
+```{r}
+# Menghitung nilai silhouette dan menampilkan grafik
+sil <- silhouette(km$cluster, dist(data_scaled))
+fviz_silhouette(sil, print.summary = FALSE) + ggtitle("Silhouette Plot")
+
+# Menampilkan nilai rata-rata silhouette
+mean(sil[, 3])
+```
+
+**Interpretasi Evaluasi Silhouette**
+
+Berdasarkan hasil Silhouette Evaluation diperoleh nilai rata-rata silhouette sebesar 0,591. Nilai tersebut menunjukkan bahwa hasil clustering memiliki kualitas yang cukup baik karena berada di atas 0,5 sehingga struktur cluster yang terbentuk sudah cukup jelas.
+
+Dari grafik silhouette, dapat diamati bahwa:
+
+- Cluster 2 memiliki jumlah anggota yang jauh lebih banyak dibandingkan Cluster 1. Sebagian besar observasi pada cluster ini memiliki nilai silhouette positif dan berada di atas garis rata-rata, sehingga menunjukkan bahwa anggota cluster cukup homogen dan terpisah dengan baik dari cluster lainnya.
+
+- Cluster 1 memiliki jumlah anggota yang relatif sedikit. Pada cluster ini masih terdapat beberapa observasi dengan nilai silhouette yang mendekati nol bahkan bernilai negatif. Hal ini menunjukkan bahwa sebagian anggota cluster memiliki karakteristik yang masih mirip dengan cluster lain sehingga pemisahannya belum sepenuhnya optimal.
+
+Secara keseluruhan, mayoritas observasi memiliki nilai silhouette positif. Hal ini menunjukkan bahwa hasil pengelompokan sudah cukup baik dalam membedakan pelanggan ke dalam dua kelompok yang berbeda.
+
+## Analisis Hierarchical Clustering & Dendrogram
+```{r}
+# Membentuk matriks jarak Euclidean
+dist_matrix <- dist(data_scaled, method = "euclidean")
+
+# Hierarchical Clustering (Metode Ward)
+hc <- hclust(dist_matrix, method = "ward.D2")
+
+# Menampilkan Dendrogram
+plot(hc, labels = FALSE, hang = -1, 
+     main = "Dendrogram Hierarchical Clustering",
+     xlab = "Observasi (Pelanggan)", ylab = "Jarak Euclidean")
+rect.hclust(hc, k = 2, border = "red")
+```
+
+**Interpretasi Dendrogram Hierarchical Clustering**
+
+Berdasarkan dendrogram yang dihasilkan menggunakan metode Hierarchical Clustering Ward.D2 dengan jarak Euclidean, terlihat bahwa data pelanggan membentuk beberapa kelompok yang berbeda.
+
+Garis kotak merah menunjukkan pemotongan dendrogram pada k = 2, sehingga seluruh observasi dikelompokkan menjadi dua cluster utama. Pemilihan dua cluster ini didasarkan pada adanya jarak penggabungan yang relatif besar pada tingkat hierarki yang lebih tinggi, sehingga pemisahan menjadi dua kelompok dianggap mampu menggambarkan struktur data dengan cukup baik.
+
+Selain itu, terlihat bahwa sebagian besar observasi berada dalam kelompok yang besar, sedangkan sebagian observasi lainnya membentuk kelompok yang lebih kecil. Hal ini menunjukkan adanya perbedaan pola pengeluaran pelanggan yang cukup jelas antar kelompok.
+
+Secara keseluruhan, dendrogram mendukung penggunaan 2 cluster sebagai jumlah cluster yang digunakan pada proses K-Means Clustering. Hasil ini juga sejalan dengan evaluasi silhouette yang menunjukkan bahwa pengelompokan menjadi dua cluster menghasilkan kualitas clustering yang cukup baik.
+
+# Karakteristik Cluster
+```{r}
+# Menambahkan label cluster ke data asli
+hasil_cluster <- cbind(data_cluster, Cluster = km$cluster)
+
+# Melihat karakteristik tiap cluster
+aggregate(. ~ Cluster, data = hasil_cluster, mean)
+```
+**Interpretasi Karakteristik Cluster**
+
+Berdasarkan rata-rata pengeluaran pada masing-masing variabel, karakteristik kedua cluster dapat dijelaskan sebagai berikut:
+
+- Cluster 1 memiliki rata-rata pengeluaran yang lebih tinggi pada hampir seluruh kategori produk dibandingkan Cluster 2. Pengeluaran terbesar terdapat pada kategori Grocery (29.245,20), Milk (21.043,58), dan Detergents_Paper (13.649,85). Hal ini menunjukkan bahwa pelanggan pada cluster ini cenderung memiliki tingkat konsumsi yang lebih tinggi dan melakukan pembelian dalam jumlah yang lebih besar.
+
+- Cluster 2 memiliki rata-rata pengeluaran yang lebih rendah pada sebagian besar kategori produk. Meskipun demikian, kategori Fresh (11.931,63) masih menjadi komponen pengeluaran terbesar pada cluster ini. Hal ini mengindikasikan bahwa pelanggan pada cluster ini memiliki pola pembelian yang lebih rendah dan cenderung lebih homogen dibandingkan Cluster 1.
+
+Perbedaan rata-rata pengeluaran yang cukup signifikan antara kedua cluster menunjukkan bahwa metode K-Means berhasil membedakan pelanggan berdasarkan tingkat dan pola pengeluarannya pada berbagai kategori produk.
+
+## Visualisasi Karakteristik Cluster
+```{r}
+# Mengubah data ke bentuk long format
+cluster_mean <- aggregate(. ~ Cluster, data = hasil_cluster, mean)
+cluster_long <- pivot_longer(cluster_mean, cols = -Cluster,
+                              names_to = "Variabel",
+                              values_to = "Rata_rata")
+
+# Visualisasi perbandingan cluster
+ggplot(cluster_long, aes(x = Variabel, y = Rata_rata, fill = factor(Cluster))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Rata-rata Pengeluaran Tiap Cluster",
+       x = "Kategori Produk",
+       y = "Rata-rata Pengeluaran",
+       fill = "Cluster") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Interpretasi Karakteristik Cluster**
+
+Berdasarkan grafik rata-rata pengeluaran tiap cluster, terlihat adanya perbedaan pola pengeluaran antara Cluster 1 dan Cluster 2.
+
+- Cluster 1 menunjukkan nilai rata-rata pengeluaran yang lebih tinggi hampir pada seluruh kategori produk, terutama Grocery, Milk, dan Detergents_Paper. Hal ini menunjukkan bahwa pelanggan pada cluster ini cenderung memiliki intensitas pembelian yang lebih tinggi dibandingkan kelompok lainnya.
+
+- Cluster 2 memiliki rata-rata pengeluaran yang lebih rendah pada sebagian besar kategori produk. Namun, pada kategori Fresh, perbedaan antara kedua cluster tidak terlalu signifikan, yang menunjukkan bahwa produk tersebut relatif merata dikonsumsi oleh kedua kelompok pelanggan.
+
+Secara keseluruhan, hasil visualisasi ini memperkuat temuan sebelumnya bahwa Cluster 1 merepresentasikan kelompok pelanggan dengan tingkat pengeluaran lebih tinggi, sedangkan Cluster 2 merepresentasikan kelompok pelanggan dengan tingkat pengeluaran yang lebih rendah.
+
+# Bootstrap Stability Analysis
+```{r}
+# Set seed agar hasil dapat direplikasi
+set.seed(123)
+
+# Melakukan bootstrap clustering
+# B = jumlah pengulangan resampling
+# k = jumlah cluster (mengikuti hasil terbaik dari Elbow & Silhouette)
+boot_stability <- clusterboot(
+  data_scaled,
+  B = 100,
+  bootmethod = "boot",
+  clustermethod = kmeansCBI,
+  k = 2,
+  seed = 123
+)
+
+# Menampilkan rata-rata kestabilan cluster secara keseluruhan
+boot_stability$bootmean
+
+# Menampilkan kestabilan masing-masing cluster
+boot_stability$bootbrd
+```
+
+**Interpretasi Bootstrap Stability**
+
+Bootstrap Stability Analysis digunakan untuk menguji konsistensi struktur cluster melalui pendekatan resampling sebanyak 100 kali. Metode ini menunjukkan seberapa stabil hasil clustering terhadap perubahan sampel data.
+
+Berdasarkan hasil yang diperoleh, nilai bootmean untuk cluster pertama sebesar 0,945, sedangkan cluster kedua sebesar 0,642. Hal ini menunjukkan bahwa cluster pertama memiliki kestabilan yang sangat tinggi, sementara cluster kedua masih cukup stabil meskipun lebih rendah.
+
+Selain itu, nilai bootbrd menunjukkan bahwa cluster pertama tidak memiliki observasi yang tidak stabil, sedangkan cluster kedua memiliki sedikit observasi yang kurang stabil.
+
+Secara keseluruhan, hasil Bootstrap Stability menunjukkan bahwa struktur cluster yang terbentuk sudah cukup stabil dan dapat digunakan untuk analisis lebih lanjut.
+
+# Kesimpulan Akhir
+
+Berdasarkan seluruh tahapan analisis yang telah dilakukan pada dataset *Wholesale Customers* menggunakan metode K-Means Clustering, diperoleh kesimpulan sebagai berikut.
+
+1. Jumlah cluster optimal yang diperoleh berdasarkan metode Elbow dan Silhouette adalah k = 2, dengan nilai silhouette sebesar 0.59 yang menunjukkan bahwa struktur pengelompokan berada pada kategori cukup baik.
+
+2. Hasil clustering membagi pelanggan menjadi dua kelompok, yaitu Cluster 1 sebanyak 41 pelanggan dengan tingkat pengeluaran yang lebih tinggi, serta Cluster 2 sebanyak 399 pelanggan dengan tingkat pengeluaran yang lebih rendah dan lebih homogen.
+
+3. Nilai between_SS / total_SS sebesar 26% menunjukkan bahwa pemisahan cluster memiliki kemampuan penjelasan yang moderat terhadap variasi data.
+
+4. Evaluasi menggunakan Silhouette Analysis menunjukkan bahwa sebagian besar data telah terkelompok dengan cukup baik, meskipun masih terdapat beberapa observasi yang memiliki kedekatan antar cluster.
+
+5. Hasil Bootstrap Stability menunjukkan bahwa struktur cluster secara umum cukup stabil, sehingga hasil pengelompokan dapat digunakan untuk analisis lebih lanjut.
+
+Secara keseluruhan, metode K-Means Clustering dengan k = 2 berhasil menghasilkan segmentasi pelanggan yang cukup representatif berdasarkan pola pengeluaran.
