@@ -1,6 +1,4 @@
 # statistika-machine-learning
-# Statistical Machine Learning
-
 ## Segmentasi Pelanggan dengan K-Means Clustering pada Dataset Wholesale Customers
 
 Repository ini berisi tugas mata kuliah **Statistical Machine Learning (SML)** mengenai penerapan algoritma **K-Means Clustering** untuk melakukan segmentasi pelanggan berdasarkan pola pengeluaran menggunakan **Wholesale Customers Dataset** dari **UCI Machine Learning Repository**.
@@ -75,5 +73,6 @@ Variabel **Channel** dan **Region** tidak digunakan dalam proses clustering kare
 
 **Vina Rohamiyanti**
 NIM : 3338240007
+
 Program Studi Statistika
 Universitas Sultan Ageng Tirtayasa
