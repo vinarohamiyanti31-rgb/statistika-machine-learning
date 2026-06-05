@@ -1,2 +1,2 @@
-# segmentasi-pelanggan-kmeans
+# statistika-machine-learning
 Tugas Statistical Machine Learning
